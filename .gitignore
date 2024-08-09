@@ -1,0 +1,7 @@
+.env
+__pycache__
+build
+dist
+venv
+.mypy_cache
+bot_run.spec
