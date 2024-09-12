@@ -1,13 +1,14 @@
+import time
 import asyncio
+
 from aiosmtplib import send
 from email.mime.text import MIMEText
-
 from aiogram.types import CallbackQuery, Message
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from settings import config
+from settings import config, EDIT_MSG_DELAY
 from keyboard.mkp_cancel import mkp_cancel
 from external.messages import send_to_group
 from bot_create import bot
@@ -78,8 +79,9 @@ async def input_recipients(msg: Message, state: FSMContext):
 async def send_to_emails(msg, data: dict, recipients: list):
     count_recipients = len(recipients)
     count = 0
-    count_errors = 0
+    last_edit_time = 0
     COUNT_MSG = config.get_count_messages()
+    config.count_errors = 0
     
     count_sent = 0
     count_need_sent = config.get_count_messages()
@@ -99,43 +101,52 @@ async def send_to_emails(msg, data: dict, recipients: list):
     tasks = []
     generation = config.get_generation()
     for acc in accounts:
+        config.update_error(False)
         user = acc.split(':')[0]
         password = acc.split(':')[1]
         smtp_settings['user'] = user
         smtp_settings['password'] = password
         for recipient in recipients[count_sent:count_need_sent]:
+            if config.get_status_error():
+                break
+            count += 1
+            current_time = time.time()
             if generation:
                 generate_theme = await generate_variations(theme)
                 generate_text = await generate_variations(text)
-            count += 1
             # Обновляем сообщение о статусе
-            await message_count.edit_text(
-                f'<b>⌛️ Начинаем рассылку!'
-                f'\n⌛️ Задержка: {delay} сек'
-                f'\n🤖 Генерация: {"включена" if generation else "выключена"}'
-                f'\n✉️ Кол-во сообщений на 1 аккаунт: {COUNT_MSG}'
-                f'\n✅ Отправлено: [{count}/{count_recipients}]'
-                f'\n🚫 Ошибок во время отправки: {count_errors}'
-                f'\n➡️ Рассылка идёт с аккаунта: {user}</b>',
-                parse_mode='html')
+            if current_time - last_edit_time >= EDIT_MSG_DELAY:
+                await message_count.edit_text(
+                    f'<b>⌛️ Начинаем рассылку!'
+                    f'\n⌛️ Задержка: {delay} сек'
+                    f'\n🤖 Генерация: {"включена" if generation else "выключена"}'
+                    f'\n✉️ Кол-во сообщений на 1 аккаунт: {COUNT_MSG}'
+                    f'\n✅ Отправлено: [{count}/{count_recipients}]'
+                    f'\n🚫 Ошибок во время отправки: {config.get_count_errors()}'
+                    f'\n➡️ Рассылка идёт с аккаунта: {user}</b>',
+                    parse_mode='html')
+                last_edit_time = current_time
             if generation:
                 task = asyncio.create_task(send_email(generate_theme, generate_text, recipient, smtp_settings))
             else:
                 task = asyncio.create_task(send_email(theme, text, recipient, smtp_settings))
             tasks.append(task)
+            tasks.append(asyncio.create_task(handle_task(task, acc, msg.from_user.username)))
             await asyncio.sleep(delay)
         count_sent = count
         count_need_sent *= 2
 
-    # Ожидаем завершения всех задач
-        try:
-            await task
-        except Exception as e:
-            await send_to_group(f'<b>Ошибка при отправке письма: {e}\nВозникла у @{msg.from_user.username}</b>')
-
     await msg.answer('<b>✅ Рассылка успешно завершена!</b>', parse_mode='html')
     await send_to_group(f'<b>Пользователь @{msg.from_user.username} разослал {count} писем</b>')
 
+
+async def handle_task(task, account, user):
+    try:
+        await task
+    except Exception as e:
+        config.update_error(True)
+        config.count_errors += 1
+        await send_to_group(f'<b>Ошибка при отправке письма с аккаунта {account}: {e}\nВозникла у @{user}</b>')
 
 async def send_email(subject, html_body, recipient, smtp_settings):
     message = MIMEText(html_body, 'html')  

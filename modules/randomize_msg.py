@@ -1,14 +1,18 @@
 import random
 
+
 async def get_synonyms(word):
     """Возвращает список синонимов для заданного слова."""
     synonyms = {
         "Hello": ["Hello", "Hi", "Greetings", "Salutations"],
         "I": ["I", "we"],
-        "would": ["shall", "should", "will", "can", "may", "might", "could have", "would"],
+        "would": ["shall", "should", "will", "can", "may", "might",
+                  "could have", "would"],
         "like": ["like", "want", "prefer"],
         "to": ["to"],
-        "book": ["appointment", "engagement", "arrangement", "ticket", "registration", "subscription", "confirm", "hold", "plan", "reserve", "book"],
+        "book": ["appointment", "engagement", "arrangement", "ticket",
+                 "registration", "subscription", "confirm", "hold",
+                 "plan", "reserve", "book"],
         "a": ["a", "one"],
         "room": ["room", "chamber", "suite"],
         "currently": ["currently", "at the moment", "right now"],
@@ -25,10 +29,6 @@ async def generate_variations(base_sentence):
     words = base_sentence.split()
     variation = []
     for word in words:
-        # Получаем синонимы для текущего слова
         synonym_list = await get_synonyms(word.strip())
-        # Выбираем случайный синоним
         variation.append(random.choice(synonym_list))
-    
-    # Объединяем слова в строку и возвращаем
     return " ".join(variation)

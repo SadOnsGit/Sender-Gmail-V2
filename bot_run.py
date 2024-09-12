@@ -11,7 +11,12 @@ from bot_create import dp, bot
 
 # Подключение роутеров
 dp.include_routers(
-    router_start, router_cb_start, cb_cancel_router, cb_adminpanel, router_admin)
+    router_start,
+    router_cb_start,
+    cb_cancel_router,
+    cb_adminpanel,
+    router_admin
+)
 
 
 async def main():
