@@ -1,7 +1,7 @@
 # **Gmail Sender with Telegram**
 [![Python](https://a11ybadges.com/badge?logo=python)](https://www.python.org/)
-[![Telegram](https://a11ybadges.com/badge?logo=telegram)](https://www.python.org/)
-[![Aiogram](https://a11ybadges.com/badge?text=Aiogram3.0&badgeColor=blue)](https://www.python.org/)
+[![Telegram](https://a11ybadges.com/badge?logo=telegram)]()
+[![Aiogram](https://a11ybadges.com/badge?text=Aiogram3.0&badgeColor=blue)]()
 
 ## Дисклеймер
 
